@@ -17,35 +17,36 @@ def to_polar_coordinates(x, y):
 def to_cartesian(r, theta):
     return (r * math.cos(theta), r * math.sin(theta))
 
-def swirl_image(img, angle):
+def swirl_image(img):
     new_img = np.zeros(img.shape, np.uint8)
-    centre_x, centre_y = img.shape[0] // 2, img.shape[1] // 2
 
     img_height, img_width, _ = img.shape
-    s = set()
+    centre_x, centre_y = img_height // 2, img_width // 2
+    sr = 100
+    st = 1
 
     for x in range(0, img_width):
         for y in range(0, img_height):
-            remapped = to_polar_coordinates(y - centre_y, -(x - centre_x))
+            px = x - centre_x
+            py = y - centre_y
+            pd = math.sqrt(px ** 2 + py ** 2)
+            pa = math.atan2(py, px)
+            sa = 1 - (pd / sr)
 
-            if remapped == None:
+            if sa > 0:
+                ta = st * sa * math.pi * 2
+                pa += ta
+                px = round(math.cos(pa) * pd)
+                py = round(math.sin(pa) * pd)
+
+                new_img[x, y] = img[px + centre_x, py + centre_y]
+            else:
                 new_img[x, y] = img[x, y]
-                continue
 
-            swirl_pc = (math.log(2) * remapped[0] / 5, 0.5 * angle * math.exp(remapped[1]))
-            new_cart = to_cartesian(*swirl_pc)
-            new_cart = (math.ceil(remapped[0]) if remapped[0] < 0 else math.floor(remapped[0]) , math.ceil(remapped[1]) if remapped[1] < 0 else math.floor(remapped[1]))
-
-            org_map_new_cart = (centre_y - new_cart[1], centre_x + new_cart[0])
-            s.add(org_map_new_cart)
-            print((x, y), (y - centre_y, -x + centre_x), new_cart, org_map_new_cart)
-            new_img[org_map_new_cart[0], org_map_new_cart[1]] = img[x, y]
-
-    print(len(s))
 
     return new_img
 
-swirled = swirl_image(img, math.pi/2)
+swirled = swirl_image(img)
 
 # print(to_polar_coordinates(1, 1), to_cartesian(*to_polar_coordinates(1, 1)))
 # print(to_polar_coordinates(-1, 1), to_cartesian(*to_polar_coordinates(-1, 1)))
