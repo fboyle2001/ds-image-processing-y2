@@ -55,7 +55,7 @@ def bilateral_filter(img, size, sigma_colour, sigma_space):
                 for n_y in range(max(y - size, 0), min(y + size + 1, img_height - 1)):
                     nb, ng, nr = img[n_x, n_y].astype(dtype=int)
 
-                    g_1 = gaussian((x - n_x) ** 2 + (y - n_y) ** 2, sigma_space)
+                    g_1 = gaussian(math.sqrt((x - n_x) ** 2 + (y - n_y) ** 2), sigma_space)
                     g_2_b = gaussian(b - nb, sigma_colour)
                     g_2_g = gaussian(g - ng, sigma_colour)
                     g_2_r = gaussian(r - nr, sigma_colour)
@@ -103,7 +103,7 @@ filtered = bilateral_filter(img, 2, 15, 15)
 hsvf = cv2.cvtColor(filtered, cv2.COLOR_BGR2HSV)
 #apply_colour_curve(hsvf, map)
 #apply_colour_curve_hsv(hsvf, map)
-apply_colour_hsv(hsvf, 1.5)
+apply_colour_hsv(hsvf, 1.3)
 rgbf = cv2.cvtColor(hsvf, cv2.COLOR_HSV2BGR)
 
 concat = np.concatenate((img, rgbf), axis=1)
