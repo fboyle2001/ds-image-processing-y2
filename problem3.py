@@ -100,13 +100,14 @@ filtered = bilateral_filter(img, 2, 15, 15)
 #concat = np.concatenate((img, filtered, my_filtered), axis=1)
 
 #filtered = cv2.blur(img, (2, 2))
-hsvf = cv2.cvtColor(filtered, cv2.COLOR_BGR2HSV)
+#hsvf = cv2.cvtColor(filtered, cv2.COLOR_BGR2HSV)
 #apply_colour_curve(hsvf, map)
 #apply_colour_curve_hsv(hsvf, map)
-apply_colour_hsv(hsvf, 1.3)
-rgbf = cv2.cvtColor(hsvf, cv2.COLOR_HSV2BGR)
+#apply_colour_hsv(hsvf, 1.3)
+#rgbf = cv2.cvtColor(hsvf, cv2.COLOR_HSV2BGR)
 
-concat = np.concatenate((img, rgbf), axis=1)
+d = img - filtered
+concat = np.concatenate((img, filtered, d), axis=1)
 
-cv2.imshow("Displayed Image", concat)
+cv2.imshow("SLOW Displayed Image", concat)
 cv2.waitKey(0)

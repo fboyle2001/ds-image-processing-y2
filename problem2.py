@@ -5,6 +5,7 @@ import math
 
 def apply_charcoal_effect(img, blur, blending_coefficient):
     mask = make_noise_texture(img)
+    mask = rotate_image(mask, 80)
     #img = gaussian_filter(img, *blur)
     img = blend_mask(img, mask, blending_coefficient)
     #img = cv2.GaussianBlur(img, (3, 3), 0)
@@ -35,32 +36,51 @@ def blend_mask(img, mask, blending_coefficient):
     return img
 
 def make_noise_texture(img):
-    #parameters = 190, 18
-    noise = cv2.bitwise_not(img)
-    #noise = np.random.normal(*parameters, img.shape).astype(np.uint8)
+    parameters = 20, 5
+    #noise = cv2.bitwise_not(img)
+    noise = np.random.normal(*parameters, img.shape).astype(np.uint8)
     # MUST REPLACE STOLEN FROM https://stackoverflow.com/questions/40305933/how-to-add-motion-blur-to-numpy-array
     size=5
     kernel_motion_blur = np.zeros((size, size))
     kernel_motion_blur[int((size-1)/2), :] = np.ones(size)
     kernel_motion_blur = kernel_motion_blur / size
     noise = cv2.filter2D(noise, -1, kernel_motion_blur)
-    v=5
+    v=15
     kernel_motion_blur_v = np.zeros((v, v))
     kernel_motion_blur_v[:, int((v-1)/2)] = np.ones(v)
     kernel_motion_blur_v = kernel_motion_blur_v / v
     noise = cv2.filter2D(noise, -1, kernel_motion_blur_v)
     return noise
 
+def rotate_image(image, angle):
+    image_center = tuple(np.array(image.shape[1::-1]) / 2)
+    rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
+    result = cv2.warpAffine(image, rot_mat, image.shape[1::-1], flags=cv2.INTER_LINEAR)
+    return result
+
 img = cv2.imread("face1.jpg", cv2.IMREAD_COLOR)
 img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+q = cv2.imread("charcoal.png", cv2.IMREAD_GRAYSCALE)
+r = blend_mask(img, q, 0.2)
+concat = np.concatenate((img, q, r), axis=1)
+cv2.namedWindow("Displayed Image", cv2.WINDOW_NORMAL)
+cv2.resizeWindow("Displayed Image", 1200, 400)
+cv2.imshow("Displayed Image", concat)
+
+cv2.waitKey(0)
+
+import sys#
+sys.exit(0)
+#img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 c = np.copy(img)
 
 cv2.waitKey(0)
 
-blending_coefficient = 0.2
+blending_coefficient = 0.5
 mode = "monochrome"
 new = None
 inverted = make_noise_texture(img)
+inverted = rotate_image(inverted, 80)
 
 cv2.waitKey(0)
 if mode == "monochrome":
