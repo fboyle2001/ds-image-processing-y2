@@ -61,7 +61,6 @@ def generate_intensity_gaussian_mask(slide, n, sigma):
     #normalised = np.array([[element / total for element in row] for row in mask])
     return np.array(mask)
 
-# In my experimentation, this was 3x faster than my initial implementation
 def bilateral_filter(img, n, sigma_colour, sigma_space):
     result = np.zeros(img.shape, np.uint8)
     space_mask = generate_spatial_gaussian_mask(n, sigma_space)
@@ -91,56 +90,74 @@ def bilateral_filter(img, n, sigma_colour, sigma_space):
 
     return result
 
-def apply_colour_curve(img, channel_maps, hsv = True):
-    new_img = np.copy(img)
+def compute_polynomial_single_channel(points, end):
+    def fitter(x, points):
+        s = 0
 
-    if hsv:
-        new_img = cv2.cvtColor(new_img, cv2.COLOR_BGR2HSV)
+        for i, point in enumerate(points):
+            product = point[1]
 
+            for j, other in enumerate(points):
+                if i == j:
+                    continue
+                product *= (x - other[0]) / (point[0] - other[0])
+
+            s += product
+
+        return s
+
+    return np.array([fitter(x, points) for x in range(end)], dtype=np.uint8)
+
+def generate_hsv_lut():
+    # I decided to use HSV instead of BGR to for my colour curves
+    # this was because it allows targeting of colours that would create the beautifying
+    # effect without distorting the image's contrast too badly
+    # I have not applied a curve to the hue since this would simply change the colour
+    # which would have an adverse effect
+    hue = [x for x in range(180)]
+    # I have used Lagrange Interpolating Polynomials to calculate the colour curves
+    # these are polynomials of degree n-1 (given n points) that pass through the specified points
+    # essentially allowed me to 'drag' the curve to where I wanted
+    # The saturation curve is higher than the value curve
+    saturation = compute_polynomial_single_channel([(0, 0), (128, 150), (255, 255)], 256)
+    value = compute_polynomial_single_channel([(0, 0), (128, 135), (255, 255)], 256)
+
+    return [hue, saturation, value]
+
+def apply_hsv_lut(img, lut):
+    copy = np.copy(cv2.cvtColor(img, cv2.COLOR_BGR2HSV))
     img_height, img_width, img_channels = img.shape
 
     for x in range(img_width):
         for y in range(img_height):
-            for channel in range(img_channels):
-                if channel == 1:
-                    r = new_img[x, y][1]
-                    new_img[x, y][1] *= 1.5
-                    n = new_img[x, y][1]
+            h, s, v = copy[y, x]
+            nh, ns, nv = lut[0][h], lut[1][s], lut[2][v]
+            copy[y, x] = [nh, ns, nv]
 
-                    if r > n:
-                        new_img[x, y][1] = 255
+    return cv2.cvtColor(copy, cv2.COLOR_HSV2BGR)
 
-    if hsv:
-        new_img = cv2.cvtColor(new_img, cv2.COLOR_HSV2BGR)
-
-    return new_img
-
-## NOT MINE MUST REPLACE
-def hisEqulColor(img):
-    ycrcb=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-    channels=cv2.split(ycrcb)
-    cv2.equalizeHist(channels[1],channels[1])
-    cv2.merge(channels,ycrcb)
-    cv2.cvtColor(ycrcb,cv2.COLOR_HSV2BGR,img)
-    return img
-
-channel_maps = [
-    lambda h: h,
-    lambda s: s * 1.2 if s > s * 1.2 else 255,
-    lambda v: v
-]
-
-for i in range(3):
-    print(i, 1, channel_maps[i](1))
 img = cv2.imread("face1.jpg", cv2.IMREAD_COLOR)
-#img = hisEqulColor(img)
-f = bilateral_filter(img, 2, 15, 15)
+lut = generate_hsv_lut()
+
+from matplotlib import pyplot as plt
+# plt.plot([x for x in range(180)], lut[0])
+# plt.plot([x for x in range(180)], [x for x in range(180)])
+# plt.show()
+# plt.plot([x for x in range(256)], lut[1])
+# plt.plot([x for x in range(256)], [x for x in range(256)])
+# plt.show()
+# plt.plot([x for x in range(256)], lut[2])
+# plt.plot([x for x in range(256)], [x for x in range(256)])
+# plt.show()
+f = bilateral_filter(img, 2, 6, 6)
+
+out = apply_hsv_lut(f, lut)
 
 
-c = apply_colour_curve(f, channel_maps, hsv=True)
-d = img - c
+#c = apply_colour_curve(img, [], hsv=True)
+#d = img - c
 
-concat = np.concatenate((img, f, c, d), axis=1)
+concat = np.concatenate((img, f, out), axis=1)
 
 cv2.imshow("FAST Displayed Image", concat)
 cv2.waitKey(0)

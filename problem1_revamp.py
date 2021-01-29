@@ -120,18 +120,26 @@ def gaussian_filter(img, n, sigma, width = None, height = None, separate = False
 
     return result
 
+def darken_image(img, coefficient):
+    darkened = np.copy(img)
+    darkened = cv2.cvtColor(darkened, cv2.COLOR_BGR2HSV)
+
+    for x in range(0, img.shape[0]):
+        for y in range(0, img.shape[1]):
+            darkened[x, y, 2] = np.uint8(darkened[x, y, 2] * coefficient)
+
+    return cv2.cvtColor(darkened, cv2.COLOR_HSV2BGR)
 
 img = cv2.imread("face1.jpg", cv2.IMREAD_COLOR)
-width_range = [225, 255]
+d = darken_image(img, 0.5)
+width_range = [225, 245]
 height_range = [120, 320]
 template = gen_rainbow(width_range, height_range, background = [int((23 / 360) * 179), int(34 / 100 * 255), int(87 / 100 * 255)]).astype(np.uint8)
 blurred_template = gaussian_filter(template, 9, 4, height=width_range, separate=True)
 alpha = 0.8
-blended = blend_images(img, blurred_template, alpha, width_range, height_range)
+blended = blend_images(d, blurred_template, alpha, width_range, height_range)
 blended_blurred = gaussian_filter(blended, 2, 0.5, height=width_range, width=height_range, separate=False)
 
-concat = np.concatenate((img, template, blurred_template, blended_blurred), axis=1)
-cv2.namedWindow("Displayed Image", cv2.WINDOW_NORMAL)
-cv2.resizeWindow("Displayed Image", 1600, 400)
+concat = np.concatenate((img, d, blurred_template, blended), axis=1)
 cv2.imshow("Displayed Image", concat)
 cv2.waitKey(0)

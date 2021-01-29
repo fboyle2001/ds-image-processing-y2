@@ -2,8 +2,9 @@ import cv2
 import numpy as np
 import os
 import math
+import sys
 
-def swirl_image(img, swirl_radius, swirl_angle, swirl_direction=-1, bilinear=True):
+def swirl_image(img, swirl_radius, swirl_angle, swirl_direction, bilinear=True):
     # Create an empty image of the same dimensions
     new_img = np.zeros(img.shape, np.uint8)
 
@@ -53,129 +54,38 @@ def swirl_image(img, swirl_radius, swirl_angle, swirl_direction=-1, bilinear=Tru
 
     return new_img
 
-def inverse_swirl(img, swirl_radius, swirl_angle, swirl_direction=-1):
-    # Create an empty image of the same dimensions
-    new_img = np.zeros(img.shape, np.uint8)
+def low_pass_butterworth(img, n = 1, K = 15):
+    # Fourier Transform of the image
+    fft = np.fft.fft2(img)
+    # Shift it so (0, 0) is in the centre
+    fft = np.fft.fftshift(fft)
+    img_width, img_height = img.shape
+    # Calculate the coordinates of the centre
+    centre_x, centre_y = img_width // 2, img_height // 2
 
-    # Calculate the center of the image
-    img_height, img_width, _ = img.shape
-    centre_x, centre_y = img_height // 2, img_width // 2
+    lpf = np.zeros((img_width, img_height), np.float64)
 
-    # Loop over each pixel
-    for x in range(0, img_width):
-        for y in range(0, img_height):
-            # Center the pixel's coordinates
-            centred_x = -(x - centre_x)
-            centred_y = -(y - centre_y)
+    for x in range(-2 * K, 2 * K):
+        for y in range(-2 * K, 2 * K):
+            dist = math.sqrt(x ** 2 + y ** 2)
+            lpf[centre_x + x, centre_y + y] = 1 / (1 + np.power(dist / K, 2 * n))
+    #np.set_printoptions(threshold=sys.maxsize)
+    #print(lpf[centre_x-h:centre_x+h, centre_y-h:centre_y+h])
+    #lpf[centre_x-30:centre_x+30, centre_y-30:centre_y+30] = 1
+    fft *= lpf
 
-            # Convert to polar coordinates
-            # atan2 handles quadrants
-            r = math.sqrt(centred_x ** 2 + centred_y ** 2)
-            theta = math.atan2(centred_y, centred_x)
+    f_ishift = np.fft.ifftshift(fft)
+    ifft = np.fft.ifft2(f_ishift)
+    ifft = np.abs(ifft)
+    return np.uint8(ifft)
 
-            # Idea is that the further from the origin, the less we want to rotate the pixels
-            # this will give the swirl effect
+img = cv2.imread("face1.jpg", cv2.IMREAD_GRAYSCALE)
+lpf = low_pass_butterworth(img)
+# swirl_direction = -1
+# swirled = swirl_image(img, 170, math.pi / 2, swirl_direction, bilinear=True)
+# reversed = swirl_image(swirled, 170, math.pi / 2, -swirl_direction, bilinear=True)
+# diff = img - reversed
 
-            # Only swirl the pixel if its less than the swirl radius
-            # r >= 0 as we are square rooting
-            if r <= swirl_radius:
-                # Use a linear scale for the swirl, pixels near the center have the most swirl
-                # swirl_direction can be used to switch between clockwise and anti-clockwise
-                theta += swirl_angle * (1 - r / swirl_radius) * -swirl_direction
-
-            # Convert back to cartesian
-            new_x = -(round(math.cos(theta) * r) - centre_x)
-            new_y = -(round(math.sin(theta) * r) - centre_y)
-
-            # Map the pixels to the new image
-            new_img[x, y] = img[new_x, new_y]
-
-    #print(len(expect - s))
-
-    return new_img
-
-"""
-Creates the Gaussian Mask to slide over the image
-Required Parameters:
-n - Used to create a (2 * n + 1, 2 * n + 1) sliding mask, sigma - s.d. used in the Gaussian
-"""
-def generate_gaussian_mask(n, sigma):
-    # The Gaussian function as a lambda
-    gaussian = lambda input, sigma: (1 / (sigma * math.sqrt(2 * math.pi))) * math.exp(-(input ** 2) / (2 * sigma ** 2))
-    # Will store the masks rows and columns
-    mask = []
-    # The total of all of the gaussian(r, sigma) to normalise
-    total = 0
-
-    # Create a (2 * n + 1) * (2 * n + 1) mask
-    for x in range(0, 2 * n + 1):
-        row = []
-
-        for y in range(0, 2 * n + 1):
-            # Distance from centre
-            r = math.sqrt((x - n) ** 2 + (y - n) ** 2)
-            # Value of the gaussian at a point
-            value = gaussian(r, sigma)
-            total += value
-            row.append(value)
-
-        mask.append(row)
-
-    # Normalise the result and convert it to a numpy array
-    normalised = np.array([[element / total for element in row] for row in mask])
-    return normalised
-
-"""
-Implementation of the Gaussian Filter
-Required Parameters:
-img - Source image, n - Used to create a (2 * n + 1, 2 * n + 1) sliding mask, sigma - s.d. used in the Gaussian
-Optional Parameters:
-width - apply to fixed vertical slice, height - apply to fixed horizontal slice,
-separate - only returns the affected slice if this is True
-"""
-def gaussian_filter(img, n, sigma, width = None, height = None, separate = False):
-    result = None
-
-    # Deals with the optional parameters
-    if separate:
-        result = np.zeros(img.shape, np.uint8)
-    else:
-        result = np.copy(img)
-
-    mask = generate_gaussian_mask(n, sigma)
-
-    if width == None:
-        width = (0, img.shape[0])
-
-    if height == None:
-        height = (0, img.shape[1])
-
-    # The channels are stored in the shape
-    channels = img.shape[2]
-
-    # Apply separately to each channel
-    for channel in range(channels):
-        # Pad either side so we can slide easily
-        arr = np.pad(img[:, :, channel], ((n, n), (n, n)), "edge")
-        # Loop over each original value but with the necessary offset
-        for x in range(width[0] + n, width[1] + n):
-            for y in range(height[0], height[1]):
-                # Select the neighbourhood of the pixel
-                slide = arr[x - n : x + n + 1, y : y + 2 * n + 1]
-                # Multiple the mask and slide and then sum the matrix elements
-                # This is the Gaussian blur at the pixel's b/g/r channel
-                result[x - n, y, channel] = np.sum(mask * slide).astype(np.uint8)
-
-    return result
-
-img = cv2.imread("me.png", cv2.IMREAD_COLOR)
-img = gaussian_filter(img, 2, 0.5)
-swirled = swirl_image(img, 170, math.pi / 2, bilinear=True)
-reversed = inverse_swirl(swirled, 170, math.pi / 2)
-diff = img - reversed
-
-concat = np.concatenate((img, swirled, reversed, diff), axis=1)
-cv2.namedWindow("Displayed Image", cv2.WINDOW_NORMAL)
-cv2.resizeWindow("Displayed Image", 1600, 400)
+concat = np.concatenate((img, lpf), axis=1)
 cv2.imshow("Displayed Image", concat)
 cv2.waitKey(0)

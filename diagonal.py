@@ -3,6 +3,8 @@ import numpy as np
 import os
 import math
 
+
+
 """
 Creates the Gaussian Mask to slide over the image
 Required Parameters:
@@ -85,11 +87,20 @@ def gaussian_filter(img, n, sigma, width = None, height = None, separate = False
 
     return result
 
+def vertical_motion_blur(img, size):
+    kernel = np.zeros((size, size))
+    kernel[:, int((size-1)/2)] = np.ones(size)
+    kernel /= size
+    vertical_mb = cv2.filter2D(img, -1, kernel)
+    print(kernel)
+    return vertical_mb
+
 def horizontal_motion_blur(img, size):
     kernel = np.zeros((size, size))
     kernel[int((size - 1)/2), :] = np.ones(size)
     kernel /= size
     horizonal_mb = cv2.filter2D(img, -1, kernel)
+    print(kernel)
     return horizonal_mb
 
 def diagonal_stroke(img, x, y, gradient, thickness, segment_length):
@@ -109,42 +120,49 @@ def diagonal_stroke(img, x, y, gradient, thickness, segment_length):
 
     return new_img
 
-img = cv2.imread("face1.jpg", cv2.IMREAD_GRAYSCALE)
-equ = cv2.equalizeHist(img)
-kernel = np.array([[0, 1, 0], [1,-4,1], [0, 1, 0]])
-im = cv2.filter2D(img, -1, kernel)
-q = img - np.uint8(0.2*im)
+mode = "monochrome"
 
-#im = horizontal_motion_blur(im, 4)
+if mode == "monochrome":
+    img = cv2.imread("face1.jpg", cv2.IMREAD_GRAYSCALE)
+    # Laplacian to sharpen the edges
+    kernel = np.array([[0, 1, 0], [1,-4,1], [0, 1, 0]])
+    smoothed = gaussian_filter(img, 3, 1)
+    laplacian = cv2.filter2D(smoothed, -1, kernel)
+    sharpened_edges = cv2.absdiff(img, laplacian)
+    sharpened_edges = horizontal_motion_blur(sharpened_edges, 3)
+    #sharpened_edges = vertical_motion_blur(sharpened_edges, 1)
+    equalised = cv2.equalizeHist(sharpened_edges)
+    smoothed_equalised = cv2.bilateralFilter(equalised, 9, 5, 5)
+    #smoothed_equalised = horizontal_motion_blur(smoothed_equalised, 2)
+    alpha = 0.6
+    blended = cv2.addWeighted(sharpened_edges, alpha, smoothed_equalised, 1 - alpha, 0)
+    concat = np.concatenate((img, smoothed, sharpened_edges, equalised, blended), axis=1)
+    cv2.imshow("OLD Displayed Image", concat)
+    cv2.waitKey(0)
+else:
+    img_r = cv2.imread("face1.jpg", cv2.IMREAD_COLOR)
+    channels = [0, 1]
+    cp = np.copy(img_r)
+    img = cv2.imread("face1.jpg", cv2.IMREAD_GRAYSCALE)
+    cp[:, :, 0] = img
+    cp[:, :, 1] = img
+    cp[:, :, 2] = img
 
-ivr = cv2.bitwise_not(img)
+    for channel in channels:
+        part = cp[:, :, channel]
+        kernel = np.array([[0, 1, 0], [1,-4,1], [0, 1, 0]])
+        smoothed = gaussian_filter(part, 3, 1)
+        laplacian = cv2.filter2D(smoothed, -1, kernel)
+        sharpened_edges = cv2.absdiff(part, laplacian)
+        sharpened_edges = horizontal_motion_blur(sharpened_edges, 3)
+        sharpened_edges = vertical_motion_blur(sharpened_edges, 1)
+        equalised = cv2.equalizeHist(sharpened_edges)
+        smoothed_equalised = cv2.bilateralFilter(equalised, 9, 5, 5)
+        #smoothed_equalised = horizontal_motion_blur(smoothed_equalised, 2)
+        alpha = 0.6
+        blended = cv2.addWeighted(sharpened_edges, alpha, smoothed_equalised, 1 - alpha, 0)
+        cp[:, :, channel] = blended
 
-j = 10
-diagonal = np.ones(img.shape, np.uint8) * 255
-# for x in range(40, 360, j):
-#     #int(math.sqrt(x ** 2)) works up to 200
-#     if x > 200:
-#         z = int(int(math.sqrt((400 - x) ** 2)) * 0.8)
-#         print(x, z)
-#         diagonal = diagonal_stroke(diagonal, x, x, -1, 2 * j, z)
-#     else:
-#         z = int(int(math.sqrt(x ** 2))  * 0.9)
-#         diagonal = diagonal_stroke(diagonal, x, x, -1, 2 * j, z)
-
-
-diagonal = diagonal_stroke(diagonal, 50, 200, 1, 20, 30)
-
-equ = cv2.bilateralFilter(equ, 5, 0.5, 0.5)#gaussian_filter(equ, 2, 0.5)
-mb = horizontal_motion_blur(equ, 2)
-
-alpha = 0.7
-beta = 1 - alpha
-gamma = 0
-dist = cv2.addWeighted(img, alpha, mb, beta, gamma)
-dist = horizontal_motion_blur(dist, 2)
-dist = cv2.addWeighted(dist, alpha, im, beta, 20)
-#dist = cv2.addWeighted(dist, alpha, im, beta, 0)
-
-concat = np.concatenate((q, im, equ, mb, dist), axis=1)
-cv2.imshow("Displayed Image", concat)
-cv2.waitKey(0)
+    concat = np.concatenate((img_r, cp), axis=1)
+    cv2.imshow("Displayed Image", concat)
+    cv2.waitKey(0)
