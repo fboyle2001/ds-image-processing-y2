@@ -1,6 +1,9 @@
 import cv2
 import numpy as np
 import math
+import argparse
+import os
+import time
 
 """
 Creates the Gaussian Mask to slide over the image
@@ -610,7 +613,7 @@ def problem2(img, mode, blending_coefficient, channels = [0, 1]):
     greyscale = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     output = None
 
-    if mode.lower() == "coloured pencil":
+    if mode.lower() == "coloured_pencil":
         # Create the same structure as a coloured image but set all the
         # channels to be the greyscale image
         multichannel_grey = np.zeros((*greyscale.shape, 3), np.uint8)
@@ -728,3 +731,202 @@ def problem4_inverse_demonstration(img, swirl_radius, swirl_angle, swirl_directi
     difference = reversed - img
 
     return [("Swirled", swirled), ("Reversed", reversed), ("Reversed - Original", difference)]
+
+def main():
+    parser = argparse.ArgumentParser(description = "chpf93 Image Processing Coursework")
+    requiredGroup = parser.add_argument_group("required")
+
+    # Input file
+    requiredGroup.add_argument("--inputFile", "-i", dest="inputFile", action="store", required = True)
+    # Set the problem
+    requiredGroup.add_argument("--problem", "-p", dest="problem", action="store", required = True)
+    # Output file, if not set then it displays it instead
+    parser.add_argument("--outputFile", "-o", dest="outputFile", action="store")
+
+    # Problem 1 arguments
+    parser.add_argument("--mode", "-m", dest="mode", action="store")
+    parser.add_argument("--darkening-coefficient", "-d", dest="darkening_coefficient", action="store")
+    parser.add_argument("--alpha-blend", "-b", dest="alpha_blend", action="store")
+    parser.add_argument("--beta-blend", "-bb", dest="beta_blend", action="store")
+    parser.add_argument("--neighbourhood-size", "-n", dest="neighbourhood_size", action="store")
+    parser.add_argument("--gaussian-sigma", "-s", dest="gaussian_sigma", action="store")
+
+    # Problem 2 arguments
+    # Reuse mode from problem 1
+    # Reuse alpha_blend from problem 2
+    parser.add_argument("--channels", "-c", dest="channels", action="append")
+
+    # Problem 3 arguments
+    # Reuse neighbourhood_size from problem 1
+    parser.add_argument("--gaussian-sigma-spatial", "-ss", dest="gaussian_sigma_spatial", action="store")
+    parser.add_argument("--gaussian-sigma-intensity", "-si", dest="gaussian_sigma_intensity", action="store")
+
+    # Problem 4 arguments
+    parser.add_argument("--part-a", dest="demonstration_mode", const=0, action="store_const")
+    parser.add_argument("--part-b", dest="demonstration_mode", const=1, action="store_const")
+    parser.add_argument("--part-c", dest="demonstration_mode", const=2, action="store_const")
+    parser.add_argument("--swirl-radius", "-sr", dest="swirl_radius", action="store")
+    parser.add_argument("--swirl-angle", "-sa", dest="swirl_angle", action="store")
+    parser.add_argument("--swirl-anticlockwise", dest="swirl_direction", const=-1, action="store_const")
+    parser.add_argument("--swirl-clockwise", dest="swirl_direction", const=1, action="store_const")
+    parser.add_argument("--bilinear", dest="bilinear", action="store_true")
+    parser.add_argument("--no-bilinear", "--nearest-neighbour", dest="bilinear", action="store_false")
+    parser.add_argument("--lpf-n", dest="lpf_n", action="store")
+    parser.add_argument("--lpf-K", dest="lpf_K", action="store")
+    parser.set_defaults(bilinear=True, demonstration_mode=0)
+
+    args = parser.parse_args()
+    display = args.outputFile == None
+    displayMode = "Screen" if display else "Saved to file"
+    problem = None
+
+    try:
+        problem = int(args.problem)
+    except ValueError:
+        print(f"-p accepts integers only, received {args.problem}")
+        return
+
+    inputFile = None
+
+    if os.path.isfile(args.inputFile):
+        inputFile = cv2.imread(args.inputFile, cv2.IMREAD_COLOR)
+    else:
+        print(f"{args.inputFile} does not exist")
+        return
+
+    if inputFile.size == 0:
+        print(f"{args.inputFile} is not a valid image")
+        return
+
+    output = None
+    multiple_images = False
+    displayTitle = "Output Image"
+    timeTaken = 0
+
+    print(f"Display Mode: {displayMode}")
+
+    if problem == 1:
+        mode = args.mode if args.mode != None else "simple"
+        darkening_coefficient = float(args.darkening_coefficient) != None if args.darkening_coefficient else 0.4
+        alpha_blend = float(args.alpha_blend) if args.alpha_blend != None else 1
+        beta_blend = float(args.beta_blend) if args.beta_blend else (1 - alpha_blend if args.alpha_blend != None else 0.7)
+        neighbourhood_size = int(args.neighbourhood_size) if args.neighbourhood_size else 4
+        gaussian_sigma = float(args.gaussian_sigma) if args.gaussian_sigma != None else 2.2
+
+        print("Problem 1: Light Leak Filters")
+        print(f"Parameters: mode={mode}, darkening_coefficient={darkening_coefficient}, blending_coefficient={alpha_blend}")
+        print(f"Optionals: beta_blend={beta_blend}, neighbourhood_size={neighbourhood_size}, gaussian_sigma={gaussian_sigma}")
+        print("Generating image...")
+
+        start = time.time()
+
+        output = problem1(inputFile, mode, darkening_coefficient, alpha_blend, beta_blend, gaussian_n = neighbourhood_size, gaussian_sigma = gaussian_sigma)
+        displayTitle = f"Problem 1, mode={mode}, dc={darkening_coefficient}, bc={alpha_blend}"
+
+        end = time.time()
+        timeTaken = end - start
+    elif problem == 2:
+        mode = args.mode if args.mode != None else "simple"
+        alpha_blend = float(args.alpha_blend) if args.alpha_blend != None else 0.6
+        channels = [int(x) for x in args.channels] if args.channels != None else [0, 1]
+
+        print("Problem 2: Pencil/Charcoal Effect")
+        print(f"Parameters: mode={mode}, blending_coefficient={alpha_blend}")
+
+        joined = ",".join([str(x) for x in channels])
+        displayTitle = f"Problem 2, mode={mode}, bc={alpha_blend}"
+
+        if mode.lower() == "coloured_pencil":
+            print(f"Coloured Mode Only: channels={joined}")
+            displayTitle = f"{displayTitle}, channels={joined}"
+
+        print("Generating image...")
+        start = time.time()
+
+        output = problem2(inputFile, mode, alpha_blend, channels = channels)
+
+        end = time.time()
+        timeTaken = end - start
+    elif problem == 3:
+        neighbourhood_size = int(args.neighbourhood_size) if args.neighbourhood_size else 2
+        gaussian_sigma_spatial = float(args.gaussian_sigma_spatial) if args.gaussian_sigma_spatial != None else 6
+        gaussian_sigma_intensity = float(args.gaussian_sigma_intensity) if args.gaussian_sigma_intensity != None else 6
+
+        print("Problem 3: Smoothing and Beautifying Filter")
+        print(f"Parameters: neighbourhood_size={neighbourhood_size}, gaussian_sigma_spatial={gaussian_sigma_spatial}, gaussian_sigma_intensity={gaussian_sigma_intensity}")
+
+        print("Generating image...")
+        start = time.time()
+
+        output = problem3(inputFile, neighbourhood_size, gaussian_sigma_intensity, gaussian_sigma_spatial)
+        displayTitle = f"Problem 3, n={neighbourhood_size}, ss={gaussian_sigma_spatial}, si={gaussian_sigma_intensity}"
+
+        end = time.time()
+        timeTaken = end - start
+    elif problem == 4:
+        demonstration_mode = int(args.demonstration_mode) if args.demonstration_mode else 0
+        swirl_radius = float(args.swirl_radius) if args.swirl_radius != None else 170
+        swirl_angle = float(args.swirl_angle) if args.swirl_angle != None else math.pi / 2
+        swirl_direction = int(args.swirl_direction) if args.swirl_direction != None else -1
+        bilinear = args.bilinear if args.bilinear != None else True
+        print(f"Parameters: swirl_radius={swirl_radius}, swirl_angle={swirl_angle}, swirl_direction={swirl_direction}, bilinear={bilinear}")
+
+        if demonstration_mode == 0:
+            print("Problem 4a: Face Swirl")
+
+            print("Generating image...")
+            start = time.time()
+
+            output = problem4(inputFile, swirl_radius, swirl_angle, swirl_direction = swirl_direction, bilinear = bilinear)
+            displayTitle = f"Problem 4, r={swirl_radius}, theta={swirl_angle}, d={swirl_direction}, bl={bilinear}"
+
+            end = time.time()
+            timeTaken = end - start
+        elif demonstration_mode == 1:
+            lpf_n = float(args.lpf_n) if args.lpf_n != None else 1
+            lpf_K = float(args.lpf_K) if args.lpf_K != None else 20
+
+            print("Problem 4b: Face Swirl with Low Pass Filtering")
+            print(f"Part B: lpf_n={lpf_n}, lpf_K={lpf_K}")
+
+            print("Generating image...")
+            start = time.time()
+
+            output = problem4_blur_demonstration(inputFile, swirl_radius, swirl_angle, swirl_direction = swirl_direction, bilinear = bilinear, n = lpf_n, K = lpf_K)
+            multiple_images = True
+
+            end = time.time()
+            timeTaken = end - start
+        elif demonstration_mode == 2:
+            lpf_n = float(args.lpf_n) if args.lpf_n != None else 1
+            lpf_K = float(args.lpf_K) if args.lpf_K != None else 20
+
+            print("Problem 4c: Face Swirl with Reverse and Difference")
+
+            print("Generating image...")
+            start = time.time()
+
+            output = problem4_inverse_demonstration(inputFile, swirl_radius, swirl_angle, swirl_direction = swirl_direction, bilinear = bilinear)
+            multiple_images = True
+
+            end = time.time()
+            timeTaken = end - start
+        else:
+            print(f"Unknown part specified for problem 4 ({demonstration_mode})")
+    else:
+        print(f"Cannot find problem {problem}")
+        return
+
+    print(f"Generated in {timeTaken} seconds")
+
+    if display:
+        if multiple_images:
+            display_images(output)
+        else:
+            cv2.imshow(displayTitle, output)
+            cv2.waitKey(0)
+    else:
+        pass
+
+if __name__ == "__main__":
+    main()
