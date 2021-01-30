@@ -274,7 +274,7 @@ if mode == "monochrome":
 else:
     # Make all the channels have the same
     coloured_image = cv2.imread("face1.jpg", cv2.IMREAD_COLOR)
-    multichannel_grey = np.copy(coloured_image)
+    multichannel_grey = np.zeros((*img.shape, 3), np.uint8)
     allowed_channels = [1, 2]
     multichannel_grey[:, :, 0] = img
     multichannel_grey[:, :, 1] = img
