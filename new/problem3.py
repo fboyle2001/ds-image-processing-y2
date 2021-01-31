@@ -114,12 +114,13 @@ def generate_hsv_lut():
     # effect without distorting the image's contrast too badly
     # I have not applied a curve to the hue since this would simply change the colour
     # which would have an adverse effect
-    hue = [x for x in range(180)]
+    hue = [(x + 20) % 180 for x in range(180)]
     # I have used Lagrange Interpolating Polynomials to calculate the colour curves
     # these are polynomials of degree n-1 (given n points) that pass through the specified points
     # essentially allowed me to 'drag' the curve to where I wanted
     # The saturation curve is higher than the value curve
-    saturation = compute_polynomial_single_channel([(0, 0), (128, 150), (255, 255)], 256)
+    #saturation = compute_polynomial_single_channel([(0, 0), (64, 200), (90, 210), (128, 150), (140, 30), (220, 140), (255, 255)], 256)
+    saturation = compute_polynomial_single_channel([(0, 0), (128, 160), (255, 255)], 256)
     value = compute_polynomial_single_channel([(0, 0), (128, 135), (255, 255)], 256)
 
     return [hue, saturation, value]
@@ -143,9 +144,9 @@ from matplotlib import pyplot as plt
 # plt.plot([x for x in range(180)], lut[0])
 # plt.plot([x for x in range(180)], [x for x in range(180)])
 # plt.show()
-# plt.plot([x for x in range(256)], lut[1])
-# plt.plot([x for x in range(256)], [x for x in range(256)])
-# plt.show()
+plt.plot([x for x in range(256)], lut[1])
+plt.plot([x for x in range(256)], [x for x in range(256)])
+plt.show()
 # plt.plot([x for x in range(256)], lut[2])
 # plt.plot([x for x in range(256)], [x for x in range(256)])
 # plt.show()

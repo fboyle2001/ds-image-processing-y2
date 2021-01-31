@@ -1,0 +1,56 @@
+Problem 1
+---------
+- To darken the image I have converted to HSV and decreased the value by a scale factor
+- This is because HSV is a better colour space to make changes to the brightness as V is literally for the value/brightness
+- For the light leak I have faded the light according to its y coord so that it gives a faded effect as if light is leaking
+- I have then blurred the mask to reduce the sharpness of the edges of the area and to give the effect that the light is leaking
+  out of the boundary of the area and on to the rest of the face
+- For the rainbow mask I have used HSV to generate the mask programmatically
+- Done this by varying the hue with respect to the width of the region to maximise the rainbow colours in the image
+- Truncated at 280 deg instead of 360 deg as rainbows don't loop round
+- Then created a custom add weighted function to add the mask to the darkened image
+- O(height * width * channels?) since I'm doing a loop over x and y coordinates a few times but this is only a constant factor
+- Confirmed by observation
+
+Problem 2
+---------
+- Smooth using gaussian
+- Then take the edges via a laplacian (smoothed first so that I don't get noise)
+- Sharpened the edges to give a pencil effect
+- Motion blurred the sharpened image to give the stroke effect
+- Then applied histogram equalisation to give the shading effect
+- Finally smooth over the image with a bilateral filter to preserve the edges while dealing with noise from the equalisation
+- Still only O(height * width * channels)?
+- O(height * width) for greyscale
+
+Problem 3
+---------
+- First generate the Lookup Table for a HSV image
+- Leave hue unaffected as don't want to change the colour
+- For saturation I increase it most for middle saturation values
+- Do this via Lagrange Interpolating Polynomials
+- Specify a few points and then it calculates the rest based on these
+- Similar for value but slightly less than for saturation
+- Use a bilateral filter to smooth out the image as it preserves the edges
+- Also very good at smoothing skin imperfections to give the beautification effect
+- O(height * width * channels) ??
+
+Problem 4
+---------
+- Convert to polar coordinates
+- Rotate any pixel within the range of swirl radius
+- Amount rotated by is determined by swirl_angle * (1 - r / swirl_radius)
+- Creates the swirl by rotating bits nearer the centre more
+- Implemented both bilinear and nearest neighbour interpolation
+- O(height * width)
+- For the low pass filter I have used butterworth
+- Transform to a centred FT
+- Apply the transformation
+- Convert back
+- Gives a smoothed image without the 'wave' effects seen with the other low pass filters
+- Helps suppress artifacts, need to take pictures
+- Inverse transformation has error where the rotation lands on non-integer values
+- Requires nearest neighbour or bilinear
+- Neither guarantee that we can find the original pixel exactly as we had to round
+- O(height * width) ??
+- Not channels 

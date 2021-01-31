@@ -1,0 +1,58 @@
+## All commands require the -i <input-file> and -p <problem-number> parameters
+## In my example commands I will use face1.jpg for the input file but any other image will work
+
+## Problem 1
+## Simple with parameters set out in the coursework brief
+python chpf93.py -i face1.jpg -p 1 -m simple -d <darkening coefficient> -b <blending coefficient>
+## Simple with all parameters available isn the code
+python chpf93.py -i face1.jpg -p 1 -m simple -d <darkening coefficient> -b <alpha blending coefficient> -bb <beta blending coefficient> -n <neighbourhood size for Gaussian> -s <sigma for Gaussian>
+## Recommended commands
+python chpf93.py -i face1.jpg -p 1 -m simple
+
+## Rainbow
+python chpf93.py -i face1.jpg -p 1 -m simple -d <darkening coefficient> -b <blending coefficient>
+## Rainbow with all parameters available in the code
+python chpf93.py -i face1.jpg -p 1 -m simple -d <darkening coefficient> -b <alpha blending coefficient> -bb <beta blending coefficient> -n <neighbourhood size for Gaussian> -s <sigma for Gaussian>
+## alpha affects the amount of the source image, beta affects the amount of the mask
+## Recommended commands
+python chpf93.py -i face1.jpg -p 1 -m rainbow
+python chpf93.py -i face1.jpg -p 1 -m rainbow -b 1 -bb 0.4 -d 0.6
+
+## Problem 2
+## Regular Pencil (no additional parameters available)
+python chpf93.py -i face1.jpg -p 2 -m simple -b <blending coefficient>
+## Recommended commands
+python chpf93.py -i face1.jpg -p 2 -m simple
+
+## Coloured Pencil
+## -c is an appending flag specifying the channels to apply the colouring too
+python chpf93.py -i face1.jpg -p 2 -m coloured_pencil -b <blending coefficient> -c 0 -c 1
+## Recommended commands
+python chpf93.py -i face1.jpg -p 2 -m coloured_pencil
+
+## Problem 3
+python chpf93.py -i face1.jpg -p 3 -ss <Gaussian spatial sigma> -si <Gaussian intensity sigma> -n <Gaussian neighbourhood size>
+## Recommended commands
+python chpf93.py -i face1.jpg -p 3
+
+## Problem 4a
+python chpf93.py -i face1.jpg -p 4 -sr <swirl radius> -sa <swirl angle> (--swirl-anticlockwise | --swirl-clockwise) (--bilinear | --nearest-neighbour)
+
+## With bilinear
+python chpf93.py -i face1.jpg -p 4 --bilinear
+
+## With nearest neighbour
+python chpf93.py -i face1.jpg -p 4 --nearest-neighbour
+
+## Recommended commands
+python chpf93.py -i face1.jpg -p 4
+
+## Problem 4b
+python chpf93.py -i face1.jpg -p 4 --part-b -sr <swirl radius> -sa <swirl angle> (--swirl-anticlockwise | --swirl-clockwise) (--bilinear | --nearest-neighbour) --lpf-n <Low Pass Butterworth Filter order> --lpf-K <Low Pass Butterworth Filter threshold>
+## Recommended commands
+python chpf93.py -i face1.jpg -p 4 --part-b
+
+## Problem 4c
+python chpf93.py -i face1.jpg -p 4 --part-c -sr <swirl radius> -sa <swirl angle> (--swirl-anticlockwise | --swirl-clockwise) (--bilinear | --nearest-neighbour)
+## Recommended commands
+python chpf93.py -i face1.jpg -p 4 --part-c
