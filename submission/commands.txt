@@ -1,0 +1,34 @@
+Recommended Commands
+Problem 1
+python chpf93.py -i <inputfile> -p 1 -m simple
+python chpf93.py -i <inputfile> -p 1 -m rainbow
+
+Problem 2
+python chpf93.py -i <inputfile> -p 2 -m simple
+python chpf93.py -i <inputfile> -p 2 -m coloured_pencil
+
+Problem 3
+python chpf93.py -i <inputfile> -p 3
+
+Problem 4
+python chpf93.py -i <inputfile> -p 4
+(individual parts can be run by appending --part-a or --part-b or --part-c)
+
+Full Commands for Coursework Paramaters
+Any command can be followed with -o <outputfile> to output it to a file instead of the screen
+There are additional arguments available for each command but these are left out here but can be found in the code if needed
+Problem 1
+python chpf93.py -i <inputfile> -p 1 -m [simple|rainbow] -d <darkeningCoefficient> -b <blendingCoefficient>
+
+Problem 2
+# -c is an appending flag so -c 1 -c 2 will use channels 1 and 2
+python chpf93.py -i <inputfile> -p 2 -m [simple|coloured_pencil] -b <blendingCoefficient> -c [0|1|2] -c [0|1|2]
+
+Problem 3
+python chpf93.py -i <inputfile> -p 3 -n <neighbourhoodSize> -ss <gaussianSigmaSpatial> -si <gaussianSigmaIntensity>
+
+Problem 4
+python chpf93.py -i <inputfile> -p 4 -sr <swirlRadius> -sa <swirlAngle(radians)> [--swirl-anticlockwise|--swirl-clockwise] [--bilinear|--nearest-neighbour] --lpf-n <butterworthOrder> --lpf-K <butterworthThreshold>
+python chpf93.py -i <inputfile> -p 4 --part-a -sr <swirlRadius> -sa <swirlAngle(radians)> [--swirl-anticlockwise|--swirl-clockwise] [--bilinear|--nearest-neighbour]
+python chpf93.py -i <inputfile> -p 4 --part-b -sr <swirlRadius> -sa <swirlAngle(radians)> [--swirl-anticlockwise|--swirl-clockwise] [--bilinear|--nearest-neighbour] --lpf-n <butterworthOrder> --lpf-K <butterworthThreshold>
+python chpf93.py -i <inputfile> -p 4 --part-c -sr <swirlRadius> -sa <swirlAngle(radians)> [--swirl-anticlockwise|--swirl-clockwise] [--bilinear|--nearest-neighbour]

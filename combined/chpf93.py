@@ -432,7 +432,7 @@ def generate_hsv_lut():
     # these are polynomials of degree n-1 (given n points) that pass through the specified points
     # essentially allowed me to 'drag' the curve to where I wanted
     # The saturation curve is higher than the value curve
-    saturation = compute_polynomial_single_channel([(0, 0), (128, 160), (255, 255)], 256)
+    saturation = compute_polynomial_single_channel([(0, 0), (66, 100), (128, 160), (198, 216), (255, 255)], 256)
     value = compute_polynomial_single_channel([(0, 0), (128, 135), (255, 255)], 256)
 
     return [hue, saturation, value]
@@ -705,7 +705,19 @@ bilinear defaults to True and applies bilinear interpolation. False will apply n
 Recommended parameters:
 problem4(img, 170, math.pi / 2)
 """
-def problem4(img, swirl_radius, swirl_angle, swirl_direction = -1, bilinear = True):
+def problem4(img, swirl_radius, swirl_angle, swirl_direction = -1, bilinear = True, n = 1, K = 40):
+    # Part A
+    normal = [("Swirled", problem4_normal(img, swirl_radius, swirl_angle, swirl_direction, bilinear))]
+
+    # Part B
+    blur = problem4_blur_demonstration(img, swirl_radius, swirl_angle, swirl_direction, bilinear, n, K)
+
+    # Part C
+    inverse = problem4_inverse_demonstration(img, swirl_radius, swirl_angle, swirl_direction, bilinear)
+
+    return normal + [blur[1]] + inverse[1:]
+
+def problem4_normal(img, swirl_radius, swirl_angle, swirl_direction, bilinear):
     swirled = swirl_image(img, swirl_radius, swirl_angle, swirl_direction, bilinear)
     return swirled
 
@@ -739,6 +751,9 @@ def problem4_inverse_demonstration(img, swirl_radius, swirl_angle, swirl_directi
 
     return [("Swirled", swirled), ("Reversed", reversed), ("Reversed - Original", difference)]
 
+"""
+Used to parse the command line arguments
+"""
 def main():
     parser = argparse.ArgumentParser(description = "chpf93 Image Processing Coursework")
     requiredGroup = parser.add_argument_group("required")
@@ -780,7 +795,7 @@ def main():
     parser.add_argument("--no-bilinear", "--nearest-neighbour", dest="bilinear", action="store_false")
     parser.add_argument("--lpf-n", dest="lpf_n", action="store")
     parser.add_argument("--lpf-K", dest="lpf_K", action="store")
-    parser.set_defaults(bilinear=True, demonstration_mode=0)
+    parser.set_defaults(bilinear=True, demonstration_mode=3)
 
     args = parser.parse_args()
 
@@ -898,7 +913,7 @@ def main():
             print("Generating image...")
             start = time.time()
 
-            output = problem4(inputFile, swirl_radius, swirl_angle, swirl_direction = swirl_direction, bilinear = bilinear)
+            output = problem4_normal(inputFile, swirl_radius, swirl_angle, swirl_direction = swirl_direction, bilinear = bilinear)
             displayTitle = f"Problem 4a, r={swirl_radius}, theta={swirl_angle}, d={swirl_direction}, bl={bilinear}"
 
             end = time.time()
@@ -922,17 +937,29 @@ def main():
             timeTaken = end - start
         elif demonstration_mode == 2:
             # Reverse and difference
-            lpf_n = float(args.lpf_n) if args.lpf_n != None else 1
-            lpf_K = float(args.lpf_K) if args.lpf_K != None else 20
-
             print("Problem 4c: Face Swirl with Reverse and Difference")
-
             print("Generating image...")
             start = time.time()
 
             output = problem4_inverse_demonstration(inputFile, swirl_radius, swirl_angle, swirl_direction = swirl_direction, bilinear = bilinear)
             multiple_images = True
             displayTitle = f"Problem 4c, r={swirl_radius}, theta={swirl_angle}, d={swirl_direction}, bl={bilinear}"
+
+            end = time.time()
+            timeTaken = end - start
+        elif demonstration_mode == 3:
+            lpf_n = float(args.lpf_n) if args.lpf_n != None else 1
+            lpf_K = float(args.lpf_K) if args.lpf_K != None else 50
+
+            print("Problem 4: All Parts")
+            print(f"Part B: lpf_n={lpf_n}, lpf_K={lpf_K}")
+            print("Generating image...")
+
+            start = time.time()
+
+            output = problem4(inputFile, swirl_radius, swirl_angle, swirl_direction = swirl_direction, bilinear = bilinear, n = lpf_n, K = lpf_K)
+            multiple_images = True
+            displayTitle = f"Problem 4, All Parts"
 
             end = time.time()
             timeTaken = end - start
