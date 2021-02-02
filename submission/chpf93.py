@@ -549,6 +549,7 @@ def low_pass_butterworth(channel, n, K):
     ifft = np.fft.ifft2(f_ishift)
     # Take abs as the values could be complex
     ifft = np.abs(ifft)
+    ifft = np.clip(ifft, 0, 255)
     return np.uint8(ifft)
 
 """
@@ -715,8 +716,17 @@ def problem4(img, swirl_radius, swirl_angle, swirl_direction = -1, bilinear = Tr
     # Part C
     inverse = problem4_inverse_demonstration(img, swirl_radius, swirl_angle, swirl_direction, bilinear)
 
-    return normal + [blur[1]] + inverse[1:]
+    return normal + blur[1:] + inverse[1:]
 
+"""
+Regular swirl
+swirl_radius is how far from the centre the swirl should affect
+swirl_angle is the maximum rotation of any pixel (scaled by distance from centre relative to the swirl_radius)
+swirl_direction is which way to apply the angle
+bilinear defaults to True and applies bilinear interpolation. False will apply nearest neighbour interpolation
+Recommended parameters:
+problem4(img, 170, math.pi / 2)
+"""
 def problem4_normal(img, swirl_radius, swirl_angle, swirl_direction, bilinear):
     swirled = swirl_image(img, swirl_radius, swirl_angle, swirl_direction, bilinear)
     return swirled
@@ -734,7 +744,7 @@ def problem4_blur_demonstration(img, swirl_radius, swirl_angle, swirl_direction 
     # Swirl the prefiltered image
     prefiltered_swirled = swirl_image(prefiltered, swirl_radius, swirl_angle, swirl_direction, bilinear)
 
-    return [("No Filtering", regular_swirled), ("Low Pass Butterworth Filtering", prefiltered_swirled)]
+    return [("No Filtering", regular_swirled), ("Filtered without Swirl", prefiltered), ("Low Pass Butterworth Filtering", prefiltered_swirled)]
 
 """
 Showcases the effect of reversing the swirl
