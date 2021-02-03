@@ -845,9 +845,9 @@ def main():
     if problem == 1:
         # Get the parameters for problem 1 and their defaults if they're not set
         mode = args.mode if args.mode != None else "simple"
-        darkening_coefficient = float(args.darkening_coefficient) if args.darkening_coefficient != None else (0.6 if mode == "rainbow" else 0.4)
-        alpha_blend = float(args.alpha_blend) if args.alpha_blend != None else 1
-        beta_blend = float(args.beta_blend) if args.beta_blend else (1 - alpha_blend if args.alpha_blend != None else (0.4 if mode == "rainbow" else 0.7))
+        darkening_coefficient = float(args.darkening_coefficient) if args.darkening_coefficient != None else (0.9 if mode == "rainbow" else 0.5)
+        alpha_blend = float(args.alpha_blend) if args.alpha_blend != None else (0.65 if mode == "rainbow" else 0.5)
+        beta_blend = float(args.beta_blend) if args.beta_blend else (1 - alpha_blend)
         neighbourhood_size = int(args.neighbourhood_size) if args.neighbourhood_size else 4
         gaussian_sigma = float(args.gaussian_sigma) if args.gaussian_sigma != None else 2.2
 

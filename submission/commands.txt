@@ -1,27 +1,37 @@
 Recommended Commands
+These commands already have the parameters preset
+Under each command, in brackets, I have put the command with the default parameters
+
 Problem 1
 python chpf93.py -i <inputfile> -p 1 -m simple
+(python chpf93.py -i <inputfile> -p 1 -m simple -b 0.5 -d 0.5)
+
 python chpf93.py -i <inputfile> -p 1 -m rainbow
+(python chpf93.py -i <inputfile> -p 1 -m rainbow -b 0.65 -d 0.9)
 
 Problem 2
 python chpf93.py -i <inputfile> -p 2 -m simple
+(python chpf93.py -i <inputfile> -p 2 -m simple -b 0.6)
+
 python chpf93.py -i <inputfile> -p 2 -m coloured_pencil
+(python chpf93.py -i <inputfile> -p 2 -m coloured_pencil -b 0.6)
 
 Problem 3
 python chpf93.py -i <inputfile> -p 3
+(python chpf93.py -i <inputfile> -p 3 -n 2 -ss 6 -si 6)
 
 Problem 4
 python chpf93.py -i <inputfile> -p 4
-(individual parts can be run by appending --part-a or --part-b or --part-c)
+(python chpf93.py -i <inputfile> -p 4 -sr 170 -sa 1.5707)
+[individual parts can be run by appending --part-a or --part-b or --part-c]
 
 Full Commands for Coursework Paramaters
 Any command can be followed with -o <outputfile> to output it to a file instead of the screen
-There are additional arguments available for each command but these are left out here but can be found in the code if needed
 Problem 1
 python chpf93.py -i <inputfile> -p 1 -m [simple|rainbow] -d <darkeningCoefficient> -b <blendingCoefficient>
 
 Problem 2
-# -c is an appending flag so -c 1 -c 2 will use channels 1 and 2
+# -c is an appending flag representing which channels to use so -c 1 -c 2 will use channels 1 and 2
 python chpf93.py -i <inputfile> -p 2 -m [simple|coloured_pencil] -b <blendingCoefficient> -c [0|1|2] -c [0|1|2]
 
 Problem 3
